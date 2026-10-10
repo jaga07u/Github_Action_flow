@@ -144,21 +144,3 @@ jobs:
           echo "Health check failed"
           cat "$DEPLOY_ROOT/app.log"
           exit 1
-
-      - name: Verify Deployment
-        run: |
-          set -e
-
-          for i in $(seq 1 10); do
-            if curl --fail --silent \
-              http://localhost:3000/health; then
-              echo "Deployment successful"
-              exit 0
-            fi
-
-            sleep 3
-          done
-
-          echo "Health check failed"
-          cat /home/node-demo/app.log
-          exit 1
