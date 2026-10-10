@@ -59,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          DEPLOY_ROOT="/home/node-demo"
+          DEPLOY_ROOT="/home/jagadish/node-demo"
           RELEASE_DIR="$DEPLOY_ROOT/releases/$BUILD_NUMBER"
           ARTIFACT="node-demo-${BUILD_NUMBER}.tar.gz"
 
