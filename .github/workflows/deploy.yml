@@ -48,8 +48,9 @@ jobs:
 
       - name: Prepare Release
         run: |
-          set -e
+          set -euo pipefail
           test -f dist/server.js
+
           tar -czf "node-demo-${GITHUB_RUN_NUMBER}.tar.gz" \
             dist package.json package-lock.json
 
@@ -64,74 +65,36 @@ jobs:
           ARTIFACT="node-demo-${BUILD_NUMBER}.tar.gz"
 
           mkdir -p "$RELEASE_DIR"
-
           tar -xzf "$ARTIFACT" -C "$RELEASE_DIR"
 
           cd "$RELEASE_DIR"
           npm ci --omit=dev
 
-          # Stop the previous application
-          if [ -f "$DEPLOY_ROOT/app.pid" ]; then
-            OLD_PID=$(cat "$DEPLOY_ROOT/app.pid")
-
-            if kill -0 "$OLD_PID" 2>/dev/null; then
-              kill "$OLD_PID"
-
-              for i in $(seq 1 10); do
-                kill -0 "$OLD_PID" 2>/dev/null || break
-                sleep 1
-              done
-
-              if kill -0 "$OLD_PID" 2>/dev/null; then
-                echo "Old application did not stop"
-                exit 1
-              fi
-            fi
-          fi
-
-          # Update the current release
+          # Update the active release
           ln -sfn "$RELEASE_DIR" "$DEPLOY_ROOT/current"
 
-          # Start the application
-          cd "$RELEASE_DIR"
-
-          nohup env \
-            APP_VERSION="$BUILD_NUMBER" \
-            PORT=3000 \
-            node dist/server.js \
-            > "$DEPLOY_ROOT/app.log" 2>&1 &
-
-          echo $! > "$DEPLOY_ROOT/app.pid"
-        
-      - name: Start Application
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="/home/jagadish/node-demo"
-          cd "$DEPLOY_ROOT/current"
-
-          nohup env \
-            PORT=3000 \
-            APP_VERSION="${GITHUB_RUN_NUMBER}" \
-            node dist/server.js \
-            > "$DEPLOY_ROOT/app.log" 2>&1 < /dev/null &
-
-          echo $! > "$DEPLOY_ROOT/app.pid"
-      - name: Restart Node.js Service
-        run: sudo -n /usr/bin/systemctl restart node-demo
+          # Restart the systemd-managed application
+          sudo -n /usr/bin/systemctl restart node-demo
 
       - name: Verify Deployment
         run: |
-          set -e
+          set -euo pipefail
 
           for i in $(seq 1 15); do
-            if curl --fail --silent \
+            if curl --fail --silent --show-error \
               http://localhost:3000/health; then
-              echo "Application is healthy"
-              exit 0
+              echo "Health check passed"
+              break
             fi
+
+            if [ "$i" -eq 15 ]; then
+              echo "Health check failed"
+              sudo systemctl status node-demo --no-pager -l || true
+              sudo journalctl -u node-demo -n 50 --no-pager || true
+              exit 1
+            fi
+
             sleep 2
           done
 
-          sudo journalctl -u node-demo -n 50 --no-pager
-          exit 1
+          echo "Deployment completed successfully"
