@@ -54,5 +54,10 @@ app.get("/api/divide", (req, res) => {
         result:  divide(a, b)
     });
 });
+app.get("/api/user",(req,res)=>{
+    return res.json({
+        message:"Hello I am jagadish"
+    })
+})
 
 module.exports = app;
