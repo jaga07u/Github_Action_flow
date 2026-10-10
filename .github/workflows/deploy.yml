@@ -120,27 +120,16 @@ jobs:
 
       - name: Verify Deployment
         run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="/home/jagadish/node-demo"
-          PID=$(cat "$DEPLOY_ROOT/app.pid")
+          set -e
 
           for i in $(seq 1 15); do
-            if ! kill -0 "$PID" 2>/dev/null; then
-              echo "Application process exited"
-              cat "$DEPLOY_ROOT/app.log"
-              exit 1
-            fi
-
             if curl --fail --silent \
               http://localhost:3000/health; then
               echo "Application is healthy"
               exit 0
             fi
-
             sleep 2
           done
 
-          echo "Health check failed"
-          cat "$DEPLOY_ROOT/app.log"
+          sudo journalctl -u node-demo -n 50 --no-pager
           exit 1
