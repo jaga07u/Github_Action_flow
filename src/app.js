@@ -55,9 +55,15 @@ app.get("/api/divide", (req, res) => {
     });
 });
 app.get("/api/user",(req,res)=>{
-    
+
     return res.json({
         message:"Hello I am jagadish"
+    })
+})
+app.get("/api/product",(req,res)=>{
+    
+    return res.json({
+        message:"Hello This is product url"
     })
 })
 
