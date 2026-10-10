@@ -117,8 +117,8 @@ jobs:
             > "$DEPLOY_ROOT/app.log" 2>&1 < /dev/null &
 
           echo $! > "$DEPLOY_ROOT/app.pid"
-     - name: Restart Node.js Service
-       run: sudo -n /usr/bin/systemctl restart node-demo
+      - name: Restart Node.js Service
+        run: sudo -n /usr/bin/systemctl restart node-demo
 
       - name: Verify Deployment
         run: |
