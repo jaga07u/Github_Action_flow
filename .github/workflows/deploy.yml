@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: node-production-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     if: github.event.pull_request.merged == true
@@ -55,11 +59,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          DEPLOY_ROOT="/opt/cicd-demo/node"
+          DEPLOY_ROOT="/home/node-demo"
           RELEASE_DIR="$DEPLOY_ROOT/releases/$BUILD_NUMBER"
           ARTIFACT="node-demo-${BUILD_NUMBER}.tar.gz"
 
           mkdir -p "$RELEASE_DIR"
+
           tar -xzf "$ARTIFACT" -C "$RELEASE_DIR"
 
           cd "$RELEASE_DIR"
@@ -84,10 +89,10 @@ jobs:
             fi
           fi
 
-          # Point current to the new release
+          # Update the current release
           ln -sfn "$RELEASE_DIR" "$DEPLOY_ROOT/current"
 
-          # Start the new application
+          # Start the application
           cd "$RELEASE_DIR"
 
           nohup env \
@@ -113,5 +118,5 @@ jobs:
           done
 
           echo "Health check failed"
-          cat /opt/cicd-demo/node/app.log
+          cat /home/node-demo/app.log
           exit 1
