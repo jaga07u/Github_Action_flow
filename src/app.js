@@ -60,10 +60,10 @@ app.get("/api/user",(req,res)=>{
         message:"Hello I am jagadish"
     })
 })
-app.get("/api/product",(req,res)=>{
+app.get("/api/order",(req,res)=>{
     
     return res.json({
-        message:"Hello This is product url"
+        message:"Hello This is order url"
     })
 })
 
