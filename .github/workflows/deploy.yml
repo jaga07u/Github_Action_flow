@@ -102,6 +102,48 @@ jobs:
             > "$DEPLOY_ROOT/app.log" 2>&1 &
 
           echo $! > "$DEPLOY_ROOT/app.pid"
+        
+      - name: Start Application
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="/home/jagadish/node-demo"
+          cd "$DEPLOY_ROOT/current"
+
+          nohup env \
+            PORT=3000 \
+            APP_VERSION="${GITHUB_RUN_NUMBER}" \
+            node dist/server.js \
+            > "$DEPLOY_ROOT/app.log" 2>&1 < /dev/null &
+
+          echo $! > "$DEPLOY_ROOT/app.pid"
+
+      - name: Verify Deployment
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="/home/jagadish/node-demo"
+          PID=$(cat "$DEPLOY_ROOT/app.pid")
+
+          for i in $(seq 1 15); do
+            if ! kill -0 "$PID" 2>/dev/null; then
+              echo "Application process exited"
+              cat "$DEPLOY_ROOT/app.log"
+              exit 1
+            fi
+
+            if curl --fail --silent \
+              http://localhost:3000/health; then
+              echo "Application is healthy"
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "Health check failed"
+          cat "$DEPLOY_ROOT/app.log"
+          exit 1
 
       - name: Verify Deployment
         run: |
